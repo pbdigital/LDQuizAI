@@ -6,7 +6,7 @@
  * Description: Create quizzes for LearnDash
  * Version: 1.0.0
  * Author: PBDigital
- * Author URI: https://pbdigital.ca
+ * Author URI: https://pbdigital.com.au
  * License: GPL2
  * Text Domain: learndash-quiz-maker
  * Domain Path: /languages
@@ -16,6 +16,19 @@
 if ( ! defined( 'WPINC' ) ) {
     die;
 }
+require 'plugin-update-checker/plugin-update-checker.php';
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$myUpdateChecker = PucFactory::buildUpdateChecker(
+	'https://github.com/pbdigital/LDQuizAI',
+	__FILE__,
+	'learndash-ai-quiz-maker'
+);
+
+//Set the branch that contains the stable release.
+$myUpdateChecker->setBranch('main');
+
+
 
 // Define plugin constants
 define( 'LDM_VERSION', '1.0.0' );
