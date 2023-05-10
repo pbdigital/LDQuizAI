@@ -1,0 +1,133 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  </head>
+  <body>
+    <input type="text" id="title" placeholder="Quiz Title" />
+    <input type="text" id="topic" placeholder="Quiz Topic" />
+    <input type="text" id="complexity" placeholder="Complexity" />
+    <input type="text" id="tone" placeholder="Tone" value="" />
+
+    <div id="response-container" style="background: #eee">
+      This would be hidden
+    </div>
+    <input
+      type="text"
+      id="instructions"
+      placeholder="Additional Instructions For The API"
+    />
+    <div><button id="generate-btn">Generate 3 Questions</button></div>
+    <script>
+      function generateQuestions() {
+        $("#generate-btn").prop("disabled", true);
+        // change the text to "Generating, please wait..."
+        $("#generate-btn").text("Generating, please wait...");
+        var title = $("#title").val();
+        var topic = $("#topic").val();
+        var complexity = $("#complexity").val() || "Easy/Beginner"; // set default value if complexity is empty
+        var tone = $("#tone").val() || "Engaging"; // set default value if tone is empty
+        var instructions = $("#instructions").val() || "NIL"; // set default value if instructions is empty
+
+        var messages = [
+          {
+            role: "system",
+            content:
+              'As an AI assistant designed to create Multiple Choice quizzes for learndash, you will receive a title, topic, tone, and complexity as input. Your task is to generate 3 multiple choice questions with answer options and a correct answer in a minified JSON format. Please ensure that your output contains no extraneous text, descriptions, or warnings.\n{"quiz":{"questions":[{"question":"What is the capital of France?","choices":[{"id":"A","text":"Paris"},{"id":"B","text":"London"},{"id":"C","text":"Berlin"},{"id":"D","text":"Germany"}],"correctAnswer":"A"}...]}}',
+          },
+          {
+            role: "user",
+            content:
+              "Title: " +
+              title +
+              "\nTopic: " +
+              topic +
+              "\nComplexity: " +
+              complexity +
+              "\nTone: " +
+              tone +
+              "\nAdditional Instructions: " +
+              instructions,
+          },
+        ];
+        // get every paragraph element inside #response-container
+        $("#response-container p").each(function (index, el) {
+          // add each paragraph content to messages array as user message
+          messages.push({
+            role: "assistant",
+            content: $(el).html(),
+          });
+          messages.push({
+            role: "user",
+            content: "3 more",
+          });
+        });
+
+        var settings = {
+          url: "https://api.openai.com/v1/chat/completions",
+          method: "POST",
+          timeout: 0,
+          headers: {
+            Authorization:
+              "Bearer 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",
+            "Content-Type": "application/json",
+          },
+          data: JSON.stringify({
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 993,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            model: "gpt-3.5-turbo",
+            stream: false,
+          }),
+        };
+
+        $.ajax(settings).done(function (response) {
+          $("#generate-btn").prop("disabled", false);
+          // change the text to "Generating, please wait..."
+          $("#generate-btn").text("Generate 3 More");
+          console.log(response);
+          var existingContent = $("#response-container").html();
+          var responseContent = JSON.stringify(
+            response.choices[0].message.content
+          );
+          var jsonData = extractJSON(responseContent);
+
+          if (jsonData === null) {
+            // display alert message
+            alert(responseContent);
+          } else {
+            // append the extracted JSON to the response container which will be used for upcoming requests to prevent duplicate questions
+            jsonData = jsonData.replace(/\\/g, '');
+            $("#response-container").html(
+              existingContent + "<p>" + jsonData + "</p>"
+            );
+            //Add Code to render out the questions and answers into an interface
+          }
+        });
+        function extractJSON(content) {
+          var regex = /{.*}/; // regex pattern to extract JSON object
+
+          // match regex pattern in the response content
+          var match = content.match(regex);
+
+          if (match === null) {
+            // no valid JSON found in the response
+            return null;
+          } else {
+            // valid JSON found, return the matched string
+            return match[0];
+          }
+        }
+      }
+
+      // initial call to generateQuestions()
+      // generateQuestions();
+      // add event listener to the "Generate 3 More" button
+      $("#generate-btn").click(function () {
+        generateQuestions();
+      });
+    </script>
+  </body>
+</html>
